@@ -318,6 +318,13 @@
   }
 
   #captureArea{ background:var(--board); padding:2px; border-radius:24px; }
+  #captureArea.capture-mode{ padding:1px; }
+  #captureArea.capture-mode .board-card{
+    padding:18px 18px 22px;
+    box-shadow:0 9px 20px rgba(0,0,0,0.25), inset 0 0 0 0.5px rgba(255,255,255,0.16);
+  }
+  #captureArea.capture-mode .case-tag{ display:none; }
+  #captureArea.capture-mode .pin{ top:-6px; }
 
   /* Defensive literal-color overrides for the capture region.
      html2canvas can fail to resolve CSS custom properties (var(...))
@@ -618,13 +625,16 @@ async function saveResultImage(){
     // wait two frames so the browser actually finishes the scroll/layout
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
+    el.classList.add('capture-mode');
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
     // give the browser a beat to finish painting before capture
     await new Promise(r => setTimeout(r, 150));
 
-    async function captureAt(scale){
+    async function captureAt(){
       return html2canvas(el, {
         backgroundColor: '#3A4A36',
-        scale: scale,
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         imageTimeout: 15000,
@@ -636,21 +646,16 @@ async function saveResultImage(){
       });
     }
 
-    // Very tall/scaled canvases can silently fail or come out corrupted on
-    // some mobile browsers (canvas pixel-count limits). Try a high-quality
-    // capture first, then fall back to progressively smaller scales.
     let canvas = null;
-    let lastErr = null;
-    for (const scale of [2, 1.5, 1]) {
-      try {
-        canvas = await captureAt(scale);
-        if (canvas && canvas.width > 0 && canvas.height > 0) break;
-      } catch (e) {
-        lastErr = e;
-        canvas = null;
+    try {
+      canvas = await captureAt();
+      if (!canvas || canvas.width <= 0 || canvas.height <= 0) {
+        throw new Error('캡처 실패');
       }
+    } catch (e) {
+      console.error('캡처 실패:', e);
+      throw e;
     }
-    if (!canvas) throw lastErr || new Error('캡처 실패');
 
     const filename = 'rex-x-file-1126-link-together.png';
 
@@ -687,6 +692,7 @@ async function saveResultImage(){
     console.error('이미지 저장 실패:', err);
     alert('이미지 저장에 실패했습니다. 화면을 직접 캡쳐(스크린샷)해 저장해주세요.');
   } finally {
+    el.classList.remove('capture-mode');
     window.scrollTo(prevScrollX, prevScrollY);
     btn.disabled = false;
     btn.textContent = originalLabel;

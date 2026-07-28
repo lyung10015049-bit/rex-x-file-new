@@ -192,12 +192,12 @@
   }
   .cardnews-arrow:active{ transform:translateY(2px); box-shadow:0 2px 0 #4C6E36; }
   .cardnews-stage{
-    width:min(82vw, 520px);
-    max-width:520px;
+    width:min(92vw, 760px);
+    max-width:760px;
     background:rgba(255,255,255,0.14);
     border:2px solid rgba(255,255,255,0.22);
     border-radius:24px;
-    padding:18px;
+    padding:22px;
     box-shadow:0 16px 28px rgba(0,0,0,0.24);
   }
   #screen-cardnews.screen.active{
@@ -206,13 +206,13 @@
   }
   #screen-cardnews .board-card{
     width:100%;
-    max-width:1040px;
+    max-width:1180px;
     margin:0 auto;
   }
   #screen-cardnews .cardnews-stage{
-    width:min(100%, 840px);
-    max-width:840px;
-    padding:22px;
+    width:min(100%, 900px);
+    max-width:900px;
+    padding:24px;
   }
   .cardnews-counter{
     text-align:center;
@@ -224,9 +224,12 @@
   }
   .cardnews-image{
     width:100%;
+    max-height:72vh;
+    object-fit:contain;
     display:block;
     border-radius:16px;
     box-shadow:0 10px 24px rgba(0,0,0,0.22);
+    margin:0 auto;
   }
   .cardnews-action{
     width:100%;
@@ -301,6 +304,21 @@
     font-size:16px;
     color:var(--ink);
     margin-bottom:18px;
+    font-weight:700;
+    line-height:1.7;
+  }
+
+  .question-image{
+    display:block;
+    width:100%;
+    max-width:460px;
+    height:280px;
+    margin:8px auto 14px;
+    object-fit:contain;
+    object-position:center;
+    border-radius:12px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.15);
+    background:#F6EFE0;
   }
 
   .option-btn{
@@ -391,21 +409,38 @@
     padding-top:12px;
   }
 
-  #captureArea{ background:var(--board); padding:2px; border-radius:24px; }
-  #captureArea.capture-mode{ padding:1px; }
+  #captureArea{
+    background:transparent;
+    padding:0;
+    border-radius:24px;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    width:100%;
+  }
+  #captureArea .board-card{
+    width:min(100%, 620px);
+    margin:0 auto;
+  }
+  #captureArea.capture-mode{
+    padding:24px 0;
+    background:transparent;
+  }
   #captureArea.capture-mode .board-card{
-    padding:18px 18px 22px;
+    width:min(100%, 660px);
+    margin:0 auto;
+    padding:24px 24px 28px;
     box-shadow:0 9px 20px rgba(0,0,0,0.25), inset 0 0 0 0.5px rgba(255,255,255,0.16);
   }
   #captureArea.capture-mode .case-tag{ display:none; }
-  #captureArea.capture-mode .pin{ top:-6px; }
+  #captureArea.capture-mode .pin{ display:none; }
 
   /* Defensive literal-color overrides for the capture region.
      html2canvas can fail to resolve CSS custom properties (var(...))
      on some setups, which shows up as a blank/broken screenshot.
      These duplicate the same colors as plain hex so the snapshot
      always renders correctly regardless of var() support. */
-  #captureArea{ background:#3A4A36; }
+  #captureArea{ background:transparent; }
   #captureArea .board-card{ background:#EFE7D3; }
   #captureArea .pin{ background:radial-gradient(circle at 35% 30%, #ff8a80, #B23A2E); }
   #captureArea .case-tag{ background:#332B1F; }
@@ -466,7 +501,7 @@
       <div id="file-eyebrow" class="file-eyebrow">📁 X-파일 01</div>
       <div class="file-body">
         <p class="situation" id="situationText"></p>
-        <img id="questionImg" src="" alt="X-파일 이미지" style="width:100%; display:block; border-radius:12px; margin:8px 0 14px; box-shadow:0 4px 10px rgba(0,0,0,0.15);">
+        <img id="questionImg" class="question-image" src="" alt="X-파일 이미지">
         <button class="option-btn" id="optA" onclick="selectOption('A')">
           <span class="option-badge">A</span>
           <span class="option-text" id="optAText"></span>
@@ -773,12 +808,37 @@ async function saveResultImage(){
     el.classList.add('capture-mode');
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
+    const captureRoot = document.createElement('div');
+    captureRoot.style.position = 'fixed';
+    captureRoot.style.top = '0';
+    captureRoot.style.left = '0';
+    captureRoot.style.width = '100vw';
+    captureRoot.style.minHeight = '100vh';
+    captureRoot.style.display = 'flex';
+    captureRoot.style.justifyContent = 'center';
+    captureRoot.style.alignItems = 'flex-start';
+    captureRoot.style.padding = '0';
+    captureRoot.style.background = '#F8F3E8';
+    captureRoot.style.zIndex = '2147483647';
+    captureRoot.style.pointerEvents = 'none';
+
+    const captureClone = el.cloneNode(true);
+    captureClone.style.width = 'min(100%, 500px)';
+    captureClone.style.margin = '0';
+    captureClone.style.display = 'block';
+    captureClone.style.maxWidth = '500px';
+    captureClone.style.height = 'auto';
+    captureRoot.appendChild(captureClone);
+    document.body.appendChild(captureRoot);
+
     // give the browser a beat to finish painting before capture
     await new Promise(r => setTimeout(r, 150));
 
     async function captureAt(){
-      return html2canvas(el, {
-        backgroundColor: '#3A4A36',
+      const width = Math.min(Math.max(captureRoot.scrollWidth, 560), 720);
+      const height = Math.min(Math.max(captureRoot.scrollHeight, 700), 920);
+      return html2canvas(captureRoot, {
+        backgroundColor: '#F8F3E8',
         scale: 2,
         useCORS: true,
         allowTaint: true,
@@ -786,8 +846,10 @@ async function saveResultImage(){
         logging: false,
         scrollX: 0,
         scrollY: 0,
-        windowWidth: document.documentElement.clientWidth,
-        windowHeight: document.documentElement.clientHeight
+        width,
+        height,
+        windowWidth: width,
+        windowHeight: height
       });
     }
 
@@ -838,6 +900,10 @@ async function saveResultImage(){
     alert('이미지 저장에 실패했습니다. 화면을 직접 캡쳐(스크린샷)해 저장해주세요.');
   } finally {
     el.classList.remove('capture-mode');
+    const captureRoot = document.querySelector('body > div[style*="position: fixed"][style*="z-index: 2147483647"]');
+    if (captureRoot) {
+      captureRoot.remove();
+    }
     window.scrollTo(prevScrollX, prevScrollY);
     btn.disabled = false;
     btn.textContent = originalLabel;

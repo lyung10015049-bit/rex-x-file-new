@@ -169,6 +169,63 @@
   }
   .btn-secondary:active{ transform:translateY(3px); box-shadow:0 1px 0 #4C6E36; }
 
+  .cardnews-shell{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    margin-top:16px;
+  }
+  .cardnews-arrow{
+    width:44px;
+    height:44px;
+    border:none;
+    border-radius:50%;
+    background:linear-gradient(180deg, var(--moss), var(--moss-dark));
+    color:#fff;
+    font-size:20px;
+    box-shadow:0 6px 0 #4C6E36, 0 10px 18px rgba(0,0,0,0.25);
+    cursor:pointer;
+  }
+  .cardnews-arrow:active{ transform:translateY(2px); box-shadow:0 2px 0 #4C6E36; }
+  .cardnews-stage{
+    width:min(78vw, 340px);
+    max-width:340px;
+    background:rgba(255,255,255,0.14);
+    border:2px solid rgba(255,255,255,0.22);
+    border-radius:24px;
+    padding:16px;
+    box-shadow:0 16px 28px rgba(0,0,0,0.24);
+  }
+  .cardnews-counter{
+    text-align:center;
+    color:#fff;
+    font-family:'Jua', sans-serif;
+    font-size:13px;
+    margin-bottom:10px;
+    letter-spacing:0.5px;
+  }
+  .cardnews-image{
+    width:100%;
+    display:block;
+    border-radius:16px;
+    box-shadow:0 10px 24px rgba(0,0,0,0.22);
+  }
+  .cardnews-action{
+    width:100%;
+    margin-top:12px;
+    border:none;
+    border-radius:14px;
+    background:linear-gradient(180deg, var(--paper), #E7DAB8);
+    color:var(--ink);
+    font-family:'Jua', sans-serif;
+    font-size:15px;
+    padding:12px 0;
+    cursor:pointer;
+    box-shadow:0 4px 0 rgba(0,0,0,0.16);
+  }
+  .cardnews-action:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,0.16); }
+
   .btn-tertiary{
     display:block;
     width:100%;
@@ -405,6 +462,25 @@
     </div>
   </section>
 
+  <!-- ===================== CARD NEWS ===================== -->
+  <section id="screen-cardnews" class="screen">
+    <div class="board-card">
+      <span class="pin left"></span><span class="pin right"></span>
+      <div class="headline" style="margin-top:6px; text-align:center;">Link Together 수사 중</div>
+      <p class="subcopy" style="margin-top:8px;">사건의 단서를 이어가는 카드뉴스를 확인해보세요.</p>
+
+      <div class="cardnews-shell">
+        <button class="cardnews-arrow" onclick="changeCardNews(-1)" aria-label="이전 카드뉴스">◀</button>
+        <div class="cardnews-stage">
+          <div class="cardnews-counter" id="cardnewsCounter">1 / 6</div>
+          <img class="cardnews-image" id="cardnewsImage" src="" alt="카드뉴스 이미지">
+          <button class="cardnews-action" id="cardnewsActionBtn" onclick="handleCardNewsAction()">다음 카드뉴스</button>
+        </div>
+        <button class="cardnews-arrow" onclick="changeCardNews(1)" aria-label="다음 카드뉴스">▶</button>
+      </div>
+    </div>
+  </section>
+
   <!-- ===================== RESULT ===================== -->
   <section id="screen-result" class="screen">
     <div id="captureArea">
@@ -427,7 +503,6 @@
 
     <button class="btn-primary" id="saveBtn" onclick="saveResultImage()">📸 결과 이미지로 저장하기</button>
     <button class="btn-secondary" onclick="restartQuiz()">다시 검사하기</button>
-    <a class="btn-tertiary" href="#" onclick="return false;">렉스반장의 X-파일 보고서 바로가기</a>
     <p class="footer-note">렉스반장 수사본부 · Link Together 사건 파일 #1126</p>
   </section>
 
@@ -479,6 +554,15 @@ const questions = [
   }
 ];
 
+const cardNewsImages = [
+  'CardNews/카드뉴스 1.png',
+  'CardNews/카드뉴스 2.png',
+  'CardNews/카드뉴스 3.png',
+  'CardNews/카드뉴스 4.png',
+  'CardNews/카드뉴스 5.png',
+  'CardNews/카드뉴스 6.png'
+];
+
 const results = [
   {
     min: 13, max: 15,
@@ -523,6 +607,7 @@ const results = [
 let current = 0;
 let totalScore = 0;
 let picked = null;
+let currentCardNewsIndex = 0;
 
 function buildProgress(){
   const row = document.getElementById('progressRow');
@@ -566,13 +651,42 @@ function selectOption(letter){
     if(current < questions.length){
       renderQuestion();
     } else {
-      showResult();
+      showCardNews();
     }
   }, 220);
 }
 
-function showResult(){
+function renderCardNews(){
+  const img = document.getElementById('cardnewsImage');
+  const counter = document.getElementById('cardnewsCounter');
+  const actionBtn = document.getElementById('cardnewsActionBtn');
+  img.src = cardNewsImages[currentCardNewsIndex];
+  counter.textContent = (currentCardNewsIndex + 1) + ' / ' + cardNewsImages.length;
+  actionBtn.textContent = currentCardNewsIndex === cardNewsImages.length - 1 ? '결과 확인하기' : '다음 카드뉴스';
+}
+
+function changeCardNews(step){
+  currentCardNewsIndex = Math.max(0, Math.min(cardNewsImages.length - 1, currentCardNewsIndex + step));
+  renderCardNews();
+}
+
+function handleCardNewsAction(){
+  if (currentCardNewsIndex < cardNewsImages.length - 1) {
+    changeCardNews(1);
+  } else {
+    showResult();
+  }
+}
+
+function showCardNews(){
   document.getElementById('screen-quiz').classList.remove('active');
+  document.getElementById('screen-cardnews').classList.add('active');
+  currentCardNewsIndex = 0;
+  renderCardNews();
+}
+
+function showResult(){
+  document.getElementById('screen-cardnews').classList.remove('active');
   document.getElementById('screen-result').classList.add('active');
   const r = results.find(r => totalScore >= r.min && totalScore <= r.max) || results[results.length-1];
   document.getElementById('resultIcon').textContent = r.icon;
@@ -584,8 +698,10 @@ function showResult(){
 }
 
 function restartQuiz(){
+  document.getElementById('screen-cardnews').classList.remove('active');
   document.getElementById('screen-result').classList.remove('active');
   document.getElementById('screen-intro').classList.add('active');
+  currentCardNewsIndex = 0;
 }
 
 async function saveResultImage(){

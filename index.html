@@ -46,7 +46,7 @@
   }
   .app{
     width:100%;
-    max-width:600px;
+    max-width:900px;
     position:relative;
   }
   .screen{ display:none; }
@@ -135,6 +135,11 @@
     width:150px;
     filter:drop-shadow(0 10px 14px rgba(0,0,0,0.28));
   }
+  #questionImg,
+  .cardnews-image{
+    opacity:1;
+    transition:opacity .28s ease;
+  }
 
   .btn-primary{
     display:block;
@@ -206,13 +211,13 @@
   }
   #screen-cardnews .board-card{
     width:100%;
-    max-width:1180px;
+    max-width:1350px;
     margin:0 auto;
   }
   #screen-cardnews .cardnews-stage{
-    width:min(100%, 900px);
-    max-width:900px;
-    padding:24px;
+    width:min(100%, 1350px);
+    max-width:1350px;
+    padding:28px;
   }
   .cardnews-counter{
     text-align:center;
@@ -224,7 +229,7 @@
   }
   .cardnews-image{
     width:100%;
-    max-height:72vh;
+    max-height:82vh;
     object-fit:contain;
     display:block;
     border-radius:16px;
@@ -243,6 +248,11 @@
     padding:12px 0;
     cursor:pointer;
     box-shadow:0 4px 0 rgba(0,0,0,0.16);
+  }
+  .cardnews-action.result-action{
+    background:linear-gradient(180deg, var(--moss), var(--moss-dark));
+    color:#fff;
+    box-shadow:0 5px 0 #4C6E36, 0 10px 18px rgba(0,0,0,0.3);
   }
   .cardnews-action:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,0.16); }
 
@@ -518,7 +528,7 @@
   <section id="screen-cardnews" class="screen">
     <div class="board-card">
       <span class="pin left"></span><span class="pin right"></span>
-      <div class="headline" style="margin-top:6px; text-align:center;">Link Together 수사 중</div>
+      <div class="headline" style="margin-top:6px; text-align:center;">Link Together 수사 결과 확인 중...</div>
       <p class="subcopy" style="margin-top:8px;">사건의 단서를 이어가는 카드뉴스를 확인해보세요.</p>
 
       <div class="cardnews-shell">
@@ -620,6 +630,15 @@ const cardNewsImages = [
   'CardNews/카드뉴스 6.png'
 ];
 
+function preloadImageSet(srcs){
+  srcs.forEach(src => {
+    const img = new Image();
+    img.src = src;
+  });
+}
+preloadImageSet(xFileImages);
+preloadImageSet(cardNewsImages);
+
 const results = [
   {
     min: 13, max: 15,
@@ -690,7 +709,17 @@ function renderQuestion(){
   document.getElementById('situationText').textContent = q.situation;
   document.getElementById('optAText').textContent = q.A.text;
   document.getElementById('optBText').textContent = q.B.text;
-  document.getElementById('questionImg').src = xFileImages[current];
+  const img = document.getElementById('questionImg');
+  img.style.opacity = '0';
+  img.onload = () => {
+    img.style.opacity = '1';
+    img.onload = null;
+  };
+  img.src = xFileImages[current];
+  if (img.complete && img.naturalWidth > 0) {
+    img.style.opacity = '1';
+    img.onload = null;
+  }
   document.getElementById('optA').style.borderColor = 'var(--cream-line)';
   document.getElementById('optB').style.borderColor = 'var(--cream-line)';
   document.getElementById('progressText').textContent = (current+1) + ' / ' + questions.length;
@@ -703,14 +732,12 @@ function selectOption(letter){
   const q = questions[current];
   totalScore += q[letter].score;
   document.getElementById('opt'+letter).style.borderColor = 'var(--moss)';
-  setTimeout(()=>{
-    current++;
-    if(current < questions.length){
-      renderQuestion();
-    } else {
-      showCardNews();
-    }
-  }, 220);
+  current++;
+  if(current < questions.length){
+    renderQuestion();
+  } else {
+    showCardNews();
+  }
 }
 
 function renderCardNews(){
@@ -724,6 +751,7 @@ function renderCardNews(){
   img.src = cardNewsImages[currentCardNewsIndex];
   counter.textContent = (currentCardNewsIndex + 1) + ' / ' + cardNewsImages.length;
   actionBtn.textContent = isLast ? '결과 확인하기' : '다음 카드뉴스';
+  actionBtn.classList.toggle('result-action', isLast);
   actionBtn.style.display = isLast ? 'block' : 'none';
   prevArrow.style.visibility = currentCardNewsIndex === 0 ? 'hidden' : 'visible';
   nextArrow.style.visibility = isLast ? 'hidden' : 'visible';
@@ -805,39 +833,13 @@ async function saveResultImage(){
     // wait two frames so the browser actually finishes the scroll/layout
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-    el.classList.add('capture-mode');
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-    const captureRoot = document.createElement('div');
-    captureRoot.style.position = 'fixed';
-    captureRoot.style.top = '0';
-    captureRoot.style.left = '0';
-    captureRoot.style.width = '100vw';
-    captureRoot.style.minHeight = '100vh';
-    captureRoot.style.display = 'flex';
-    captureRoot.style.justifyContent = 'center';
-    captureRoot.style.alignItems = 'flex-start';
-    captureRoot.style.padding = '0';
-    captureRoot.style.background = '#F8F3E8';
-    captureRoot.style.zIndex = '2147483647';
-    captureRoot.style.pointerEvents = 'none';
-
-    const captureClone = el.cloneNode(true);
-    captureClone.style.width = 'min(100%, 500px)';
-    captureClone.style.margin = '0';
-    captureClone.style.display = 'block';
-    captureClone.style.maxWidth = '500px';
-    captureClone.style.height = 'auto';
-    captureRoot.appendChild(captureClone);
-    document.body.appendChild(captureRoot);
-
     // give the browser a beat to finish painting before capture
     await new Promise(r => setTimeout(r, 150));
 
     async function captureAt(){
-      const width = Math.min(Math.max(captureRoot.scrollWidth, 560), 720);
-      const height = Math.min(Math.max(captureRoot.scrollHeight, 700), 920);
-      return html2canvas(captureRoot, {
+      const width = Math.max(el.scrollWidth, el.clientWidth);
+      const height = Math.max(el.scrollHeight, el.clientHeight);
+      return html2canvas(el, {
         backgroundColor: '#F8F3E8',
         scale: 2,
         useCORS: true,
@@ -900,10 +902,6 @@ async function saveResultImage(){
     alert('이미지 저장에 실패했습니다. 화면을 직접 캡쳐(스크린샷)해 저장해주세요.');
   } finally {
     el.classList.remove('capture-mode');
-    const captureRoot = document.querySelector('body > div[style*="position: fixed"][style*="z-index: 2147483647"]');
-    if (captureRoot) {
-      captureRoot.remove();
-    }
     window.scrollTo(prevScrollX, prevScrollY);
     btn.disabled = false;
     btn.textContent = originalLabel;

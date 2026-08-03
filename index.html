@@ -257,6 +257,50 @@
   }
   .cardnews-action:active{ transform:translateY(2px); box-shadow:0 1px 0 rgba(0,0,0,0.16); }
 
+  @media (max-width: 768px){
+    .cardnews-shell{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      align-items:center;
+      justify-items:center;
+    }
+    .cardnews-stage{
+      grid-column:1 / -1;
+      width:100%;
+    }
+    .cardnews-arrow{
+      width:44px;
+      height:44px;
+      font-size:18px;
+      margin:0;
+    }
+    .cardnews-arrow:first-of-type{
+      justify-self:end;
+    }
+    .cardnews-arrow:last-of-type{
+      justify-self:start;
+    }
+    .cardnews-image{
+      width:100%;
+      max-width:100%;
+      max-height:72vh;
+      min-height:320px;
+      height:auto;
+      aspect-ratio:9 / 16;
+      object-fit:cover;
+      object-position:center;
+      border-radius:16px;
+    }
+    #screen-cardnews .board-card{
+      width:min(96vw, 1120px);
+      padding:20px 14px 22px;
+    }
+    #screen-cardnews.screen.active{
+      padding:0 8px;
+    }
+  }
+
   .btn-tertiary{
     display:block;
     width:100%;
